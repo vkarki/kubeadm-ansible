@@ -1,0 +1,77 @@
+- hosts: all
+  become: yes
+  tasks:
+
+  - name: Update Hosts file
+    blockinfile:
+      path: /etc/hosts
+      insertafter: EOF
+      block: |
+      	kmaster 172.16.16.100 kmaster.example.com
+	      kworker1 172.16.16.100 kworker1.example.com
+        kworker2 172.16.16.100 kworker2.example.com
+
+  - name: Disable Firewall
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+
+  - name: Disable SWAP and remove SWAP in fstab
+    shell: |
+      swapoff -a
+      sed -i '/swap/d' /etc/fstab
+
+  - name: Install required system packages
+    apt: name={{ item }} state=latest update_cache=yes
+    loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'gnupg-agent']
+
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+      state: present
+
+  - name: Update apt and install docker-ce
+    apt: update_cache=yes name=docker-ce state=latest
+
+  - name: Start and Enable Docker
+    service:
+      name: docker
+      state: started
+      enabled: true
+
+  - name: Set network bridge ip6tables to 1
+    sysctl:
+      name: net.bridge.bridge-nf-call-ip6tables
+      value: 1
+      state: present
+
+  - name: Set network bridge iptables to 1
+    sysctl:
+      name: net.bridge.bridge-nf-call-iptables
+      value: 1
+      state: present
+
+  - name: Add K8s GPG apt Key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Add K8s repository
+    shell: |
+      echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+
+  - name: Install kubelet, kubeadm, kubectl
+    apt: name={{ item }} state=present update_cache=yes
+    loop: ['kubeadm=1.18.5-00', 'kubelet=1.18.5-00', 'kubectl=1.18.5-00']
+
+  - name: Start kubelet
+    service:
+      name: kubelet
+      enabled: true
+      state: started

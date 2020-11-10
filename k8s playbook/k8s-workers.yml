@@ -1,0 +1,21 @@
+- hosts: kmaster.example.com
+  become: yes
+  gather_facts: false
+  tasks:
+    - name: Create k8s cluster join command
+      shell: kubeadm token create --print-join-command
+      register: cluster_join_command
+
+    - name: Create join command fact
+      set_fact:
+        k8s_cluster_join_command: "{{ cluster_join_command.stdout_lines[0] }}"
+
+
+- hosts: workers
+  become: yes
+  tasks:
+    - name: Join worker nodes to k8s cluster
+      shell: "{{ hostvars['kmaster.example.com'].k8s_cluster_join_command }} --ignore-preflight-errors all  >> worker_node_joined.txt"
+      args:
+        chdir: $HOME
+        creates: worker_node_joined.txt

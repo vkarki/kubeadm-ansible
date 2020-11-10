@@ -1,0 +1,6 @@
+[masters]
+kmaster.example.com
+
+[workers]
+kworker1.example.com
+kworker2.example.com
