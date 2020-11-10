@@ -8,8 +8,8 @@
       insertafter: EOF
       block: |
       	kmaster 172.16.16.100 kmaster.example.com
-	kworker1 172.16.16.100 kworker1.example.com
-        kworker2 172.16.16.100 kworker2.example.com
+	kworker1 172.16.16.101 kworker1.example.com
+        kworker2 172.16.16.102 kworker2.example.com
 
   - name: Disable Firewall
     service:
